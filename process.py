@@ -31,6 +31,26 @@ class AddPropertyId(beam.DoFn):
         ]
 
 
+class GetProperties(beam.DoFn):
+    def process(self, element):
+        # create a dictionary for the property details.
+        property_record = {
+            'property_type': element[5],
+            'paon': element[8],
+            'saon': element[9],
+            'street': element[10],
+            'locality': element[11],
+            'town': element[12],
+            'district': element[13],
+            'county': element[14],
+            'postcode': element[4],
+        }
+        # return the property details as tuple with the property id.
+        return [
+            (element[0], property_record)
+        ]
+
+
 def run(argv=None, save_main_session=True):
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -57,6 +77,12 @@ def run(argv=None, save_main_session=True):
             | 'Split lines to arrays' >> beam.Regex.split(regex, outputEmpty=True)
             | 'Remove double quotes from array items' >> beam.ParDo(RemoveQuotations())
             | 'Add unique identifier for each property' >> beam.ParDo(AddPropertyId())
+        )
+        # create tuple of data for each unique property.
+        property_details = (
+            data
+            | 'Get list of all properties' >> beam.ParDo(GetProperties())
+            | 'Limit to one record per property' >> beam.combiners.Latest.PerKey()
         )
 
 if __name__ == '__main__':
