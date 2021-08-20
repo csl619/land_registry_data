@@ -22,6 +22,9 @@ def run(argv=None, save_main_session=True):
     pipeline_options.view_as(
         SetupOptions).save_main_session = save_main_session
 
+    with beam.Pipeline(options=pipeline_options) as p:
+
+       lines = p | 'Open input file' >> ReadFromText(known_args.input)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
