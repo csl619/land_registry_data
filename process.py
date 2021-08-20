@@ -111,6 +111,11 @@ def run(argv=None, save_main_session=True):
             | 'Get list of all transactions' >> beam.ParDo(GetTransactions())
             | 'Group transactions by property id' >> beam.GroupByKey()
         )
+        # merge the property details with the transactions to return a single tuple.
+        property_list = (
+            (({'details': property_details, 'transactions': transactions}))
+            | 'Merge property details and transactions by property id' >> beam.CoGroupByKey()
+        )
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
