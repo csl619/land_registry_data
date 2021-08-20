@@ -135,6 +135,8 @@ def run(argv=None, save_main_session=True):
         # convert tuple into json format for each outputting to file
         output = property_list | 'Convert to json objects' >> beam.ParDo(
             ConvertOutputFormat())
+        # output to .ndjson file.
+        output | 'Output to file' >> WriteToText(f'{known_args.output}.ndjson')
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
