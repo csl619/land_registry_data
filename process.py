@@ -51,6 +51,27 @@ class GetProperties(beam.DoFn):
         ]
 
 
+class GetTransactions(beam.DoFn):
+    def process(self, element):
+        # create a dictionary for the transaction details.
+        transactions = {
+            'transaction_id': element[1],
+            'price': element[2],
+            'date': element[3],
+            'property_age': element[6],
+            'property_tenure': element[7],
+            'ppd_type': element[15],
+        }
+        # check the array length to work out if this is a monthly update file
+        # if so add the status item to the transaction.
+        if len(element) > 16:
+            transactions['status'] = element[16]
+        # return the transaction details as tuple with the property id.
+        return [
+            (element[0], transactions)
+        ]
+
+
 def run(argv=None, save_main_session=True):
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -83,6 +104,12 @@ def run(argv=None, save_main_session=True):
             data
             | 'Get list of all properties' >> beam.ParDo(GetProperties())
             | 'Limit to one record per property' >> beam.combiners.Latest.PerKey()
+        )
+        # create tuple of data for each transaction record.
+        transactions = (
+            data
+            | 'Get list of all transactions' >> beam.ParDo(GetTransactions())
+            | 'Group transactions by property id' >> beam.GroupByKey()
         )
 
 if __name__ == '__main__':
