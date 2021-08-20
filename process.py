@@ -136,7 +136,8 @@ def run(argv=None, save_main_session=True):
         output = property_list | 'Convert to json objects' >> beam.ParDo(
             ConvertOutputFormat())
         # output to .ndjson file.
-        output | 'Output to file' >> WriteToText(f'{known_args.output}.ndjson')
+        output | 'Output to file' >> WriteToText(
+            f'{known_args.output}.ndjson', shard_name_template='')
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
