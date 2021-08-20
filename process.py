@@ -5,6 +5,7 @@ from apache_beam.io import ReadFromText, WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 from datetime import datetime
 from hashlib import md5
+from json import dumps
 
 
 class RemoveQuotations(beam.DoFn):
@@ -72,6 +73,21 @@ class GetTransactions(beam.DoFn):
         ]
 
 
+class ConvertOutputFormat(beam.DoFn):
+    def process(self, element):
+        line = {
+            'property_id': element[0],
+            'transactions': [],
+        }
+        for item in element[1]['details']:
+            line.update(item)
+        for item in element[1]['transactions']:
+            for transaction in item:
+                line['transactions'].append(transaction)
+        return [
+            dumps(line)
+        ]
+
 def run(argv=None, save_main_session=True):
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -116,6 +132,9 @@ def run(argv=None, save_main_session=True):
             (({'details': property_details, 'transactions': transactions}))
             | 'Merge property details and transactions by property id' >> beam.CoGroupByKey()
         )
+        # convert tuple into json format for each outputting to file
+        output = property_list | 'Convert to json objects' >> beam.ParDo(
+            ConvertOutputFormat())
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
